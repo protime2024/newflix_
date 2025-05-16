@@ -16,6 +16,10 @@ class User extends Authenticatable {
      *
      * @var array
      */
+     
+     protected $fillable = [
+        'firstname', 'lastname', 'username', 'email', 'mobile', 'password', 'exp',
+    ];
     protected $hidden = [
         'password', 'remember_token', 'ver_code', 'balance', 'kyc_data',
     ];
@@ -29,6 +33,7 @@ class User extends Authenticatable {
         'email_verified_at' => 'datetime',
         'kyc_data'          => 'object',
         'ver_code_send_at'  => 'datetime',
+         'exp'               => 'datetime',
     ];
 
     public function loginLogs() {

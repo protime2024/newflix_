@@ -84,7 +84,7 @@ class FrontendController extends Controller {
                 $query->active();
             })->apiQuery();
         } else {
-            $televisions = LiveTelevision::active()->apiQuery();
+            $televisions = LiveTelevision::with('category')->active()->apiQuery();
         }
         $imagePath = getFilePath('television');
         return response()->json([
@@ -303,7 +303,7 @@ class FrontendController extends Controller {
         ]);
     }
 
-    public function watchVideo(Request $request) {
+    public function watchVideoX(Request $request) {
         $item = Item::hasVideo()->where('status', 1)->where('id', $request->item_id)->with('category', 'sub_category')->first();
 
         if (!$item) {
@@ -385,142 +385,170 @@ class FrontendController extends Controller {
 
     }
 
+    // protected function checkWatchEligableItem($item, $userHasSubscribed) {
+    //     if ($item->version == Status::PAID_VERSION) {
+    //         $watchEligable = $userHasSubscribed ? true : false;
+    //         $type          = 'paid';
+    //     } else if ($item->version == Status::RENT_VERSION) {
+    //         $hasSubscribedItem = Subscription::active()->where('user_id', auth()->id())->where('item_id', $item->id)->whereDate('expired_date', '>', now())->exists();
+    //         if ($item->exclude_plan) {
+    //             $watchEligable = $hasSubscribedItem ? true : false;
+    //         } else {
+    //             $watchEligable = ($userHasSubscribed || $hasSubscribedItem) ? true : false;
+    //         }
+    //         $type = 'rent';
+    //     } else {
+    //         $watchEligable = true;
+    //         $type          = 'free';
+    //     }
+    //     return [$watchEligable, $type];
+    // }
+    
+    
     protected function checkWatchEligableItem($item, $userHasSubscribed) {
-        if ($item->version == Status::PAID_VERSION) {
-            $watchEligable = $userHasSubscribed ? true : false;
-            $type          = 'paid';
-        } else if ($item->version == Status::RENT_VERSION) {
-            $hasSubscribedItem = Subscription::active()->where('user_id', auth()->id())->where('item_id', $item->id)->whereDate('expired_date', '>', now())->exists();
-            if ($item->exclude_plan) {
-                $watchEligable = $hasSubscribedItem ? true : false;
-            } else {
-                $watchEligable = ($userHasSubscribed || $hasSubscribedItem) ? true : false;
-            }
-            $type = 'rent';
+    if ($item->version == Status::PAID_VERSION) {
+        $watchEligable = $userHasSubscribed ? true : false;
+        $type = 'paid';
+    } else if ($item->version == Status::RENT_VERSION) {
+        $hasSubscribedItem = Subscription::active()->where('user_id', auth()->id())->where('item_id', $item->id)->whereDate('expired_date', '>', now())->exists();
+        
+        // Check if user has a trial for this item within the last 7 days
+        $hasTrial = \DB::table('trial')
+            ->where('user_id', auth()->id())
+            ->where('item_id', $item->id)
+            ->where('created_on', '>=', now()->subDays(7))
+            ->exists();
+        
+        if ($item->exclude_plan) {
+            $watchEligable = ($hasSubscribedItem || $hasTrial) ? true : false;
         } else {
-            $watchEligable = true;
-            $type          = 'free';
+            $watchEligable = ($userHasSubscribed || $hasSubscribedItem || $hasTrial) ? true : false;
         }
-        return [$watchEligable, $type];
+        $type = 'rent';
+    } else {
+        $watchEligable = true;
+        $type = 'free';
     }
+    return [$watchEligable, $type];
+}
 
-    protected function checkWatchEligableEpisode($episode, $userHasSubscribed) {
-        if ($episode->version == Status::PAID_VERSION) {
-            $watchEligable = $userHasSubscribed ? true : false;
-            $type          = 'paid';
-        } else if ($episode->version == Status::RENT_VERSION) {
-            $hasSubscribedItem = Subscription::active()->where('user_id', auth()->id())->where('item_id', $episode->item_id)->whereDate('expired_date', '>', now())->exists();
-            if (@$episode->item->exclude_plan) {
-                $watchEligable = $hasSubscribedItem ? true : false;
-            } else {
-                $watchEligable = ($userHasSubscribed || $hasSubscribedItem) ? true : false;
-            }
-            $type = 'rent';
-        } else {
-            $watchEligable = true;
-            $type          = 'free';
-        }
-        return [$watchEligable, $type];
-    }
+    // protected function checkWatchEligableEpisode($episode, $userHasSubscribed) {
+    //     if ($episode->version == Status::PAID_VERSION) {
+    //         $watchEligable = $userHasSubscribed ? true : false;
+    //         $type          = 'paid';
+    //     } else if ($episode->version == Status::RENT_VERSION) {
+    //         $hasSubscribedItem = Subscription::active()->where('user_id', auth()->id())->where('item_id', $episode->item_id)->whereDate('expired_date', '>', now())->exists();
+    //         if (@$episode->item->exclude_plan) {
+    //             $watchEligable = $hasSubscribedItem ? true : false;
+    //         } else {
+    //             $watchEligable = ($userHasSubscribed || $hasSubscribedItem) ? true : false;
+    //         }
+    //         $type = 'rent';
+    //     } else {
+    //         $watchEligable = true;
+    //         $type          = 'free';
+    //     }
+    //     return [$watchEligable, $type];
+    // }
 
-    public function playVideo(Request $request) {
-        $validator = Validator::make($request->all(), [
-            'item_id' => 'required',
-        ]);
+    // public function playVideo(Request $request) {
+    //     $validator = Validator::make($request->all(), [
+    //         'item_id' => 'required',
+    //     ]);
 
-        if ($validator->fails()) {
-            return response()->json([
-                'remark'  => 'validation_error',
-                'status'  => 'error',
-                'message' => ['error' => $validator->errors()->all()],
-            ]);
-        }
+    //     if ($validator->fails()) {
+    //         return response()->json([
+    //             'remark'  => 'validation_error',
+    //             'status'  => 'error',
+    //             'message' => ['error' => $validator->errors()->all()],
+    //         ]);
+    //     }
 
-        $item = Item::hasVideo()->where('status', 1)->where('id', $request->item_id)->first();
-        if (!$item) {
-            return response()->json([
-                'remark'  => 'not_found',
-                'status'  => 'error',
-                'message' => ['error' => 'Item not found'],
-            ]);
-        }
+    //     $item = Item::hasVideo()->where('status', 1)->where('id', $request->item_id)->first();
+    //     if (!$item) {
+    //         return response()->json([
+    //             'remark'  => 'not_found',
+    //             'status'  => 'error',
+    //             'message' => ['error' => 'Item not found'],
+    //         ]);
+    //     }
 
-        if ($item->item_type == Status::EPISODE_ITEM && !$request->episode_id) {
-            return response()->json([
-                'remark'  => 'not_found',
-                'status'  => 'error',
-                'message' => ['error' => 'Episode id field is required'],
-            ]);
-        }
+    //     if ($item->item_type == Status::EPISODE_ITEM && !$request->episode_id) {
+    //         return response()->json([
+    //             'remark'  => 'not_found',
+    //             'status'  => 'error',
+    //             'message' => ['error' => 'Episode id field is required'],
+    //         ]);
+    //     }
 
-        $userHasSubscribed = (auth()->check() && auth()->user()->exp > now()) ? Status::ENABLE : Status::DISABLE;
+    //     $userHasSubscribed = (auth()->check() && auth()->user()->exp > now()) ? Status::ENABLE : Status::DISABLE;
 
-        if ($item->item_type == Status::EPISODE_ITEM) {
-            $episode = Episode::hasVideo()->where('item_id', $request->item_id)->find($request->episode_id);
+    //     if ($item->item_type == Status::EPISODE_ITEM) {
+    //         $episode = Episode::hasVideo()->where('item_id', $request->item_id)->find($request->episode_id);
 
-            if (!$episode) {
-                return response()->json([
-                    'remark'  => 'no_episode',
-                    'status'  => 'error',
-                    'message' => ['error' => 'No episode found'],
-                ]);
-            }
-            $watchEligable = $this->checkWatchEligableEpisode($episode, $userHasSubscribed);
+    //         if (!$episode) {
+    //             return response()->json([
+    //                 'remark'  => 'no_episode',
+    //                 'status'  => 'error',
+    //                 'message' => ['error' => 'No episode found'],
+    //             ]);
+    //         }
+    //         $watchEligable = $this->checkWatchEligableEpisode($episode, $userHasSubscribed);
 
-            if (!$watchEligable[0]) {
-                return response()->json([
-                    'remark'  => 'unauthorized_' . $watchEligable[1],
-                    'status'  => 'error',
-                    'message' => ['error' => 'Unauthorized user'],
-                    'data'    => [
-                        'item' => $item,
-                    ],
-                ]);
-            }
+    //         if (!$watchEligable[0]) {
+    //             return response()->json([
+    //                 'remark'  => 'unauthorized_' . $watchEligable[1],
+    //                 'status'  => 'error',
+    //                 'message' => ['error' => 'Unauthorized user'],
+    //                 'data'    => [
+    //                     'item' => $item,
+    //                 ],
+    //             ]);
+    //         }
 
-            $video    = $episode->video;
-            $remark   = 'episode_video';
-            $notify[] = 'Episode Video';
+    //         $video    = $episode->video;
+    //         $remark   = 'episode_video';
+    //         $notify[] = 'Episode Video';
 
-        } else {
+    //     } else {
 
-            $watchEligable = $this->checkWatchEligableItem($item, $userHasSubscribed);
-            if (!$watchEligable[0]) {
-                return response()->json([
-                    'remark'  => 'unauthorized_' . $watchEligable[1],
-                    'status'  => 'error',
-                    'message' => ['error' => 'Unauthorized user'],
-                    'data'    => [
-                        'item' => $item,
-                    ],
-                ]);
-            }
+    //         $watchEligable = $this->checkWatchEligableItem($item, $userHasSubscribed);
+    //         if (!$watchEligable[0]) {
+    //             return response()->json([
+    //                 'remark'  => 'unauthorized_' . $watchEligable[1],
+    //                 'status'  => 'error',
+    //                 'message' => ['error' => 'Unauthorized user'],
+    //                 'data'    => [
+    //                     'item' => $item,
+    //                 ],
+    //             ]);
+    //         }
 
-            $video    = $item->video;
-            $remark   = 'item_video';
-            $notify[] = 'Item Video';
-        }
+    //         $video    = $item->video;
+    //         $remark   = 'item_video';
+    //         $notify[] = 'Item Video';
+    //     }
 
-        $videoFile    = $this->videoList($video);
-        $subtitles    = $video->subtitles()->get();
-        $adsTime      = $video->getAds();
-        $subtitlePath = getFilePath('subtitle');
+    //     $videoFile    = $this->videoList($video);
+    //     $subtitles    = $video->subtitles()->get();
+    //     $adsTime      = $video->getAds();
+    //     $subtitlePath = getFilePath('subtitle');
 
-        return response()->json([
-            'remark'  => $remark,
-            'status'  => 'success',
-            'message' => ['success' => $notify],
-            'data'    => [
-                'video'         => $videoFile,
-                'subtitles'     => !blank($subtitles) ? $subtitles : null,
-                'adsTime'       => !blank($adsTime) ? $adsTime : null,
-                'subtitlePath'  => $subtitlePath,
-                'watchEligable' => $watchEligable[0],
-                'type'          => $watchEligable[1],
-            ],
-        ]);
+    //     return response()->json([
+    //         'remark'  => $remark,
+    //         'status'  => 'success',
+    //         'message' => ['success' => $notify],
+    //         'data'    => [
+    //             'video'         => $videoFile,
+    //             'subtitles'     => !blank($subtitles) ? $subtitles : null,
+    //             'adsTime'       => !blank($adsTime) ? $adsTime : null,
+    //             'subtitlePath'  => $subtitlePath,
+    //             'watchEligable' => $watchEligable[0],
+    //             'type'          => $watchEligable[1],
+    //         ],
+    //     ]);
 
-    }
+    // }
 
     private function videoList($video) {
         $videoFile = [];

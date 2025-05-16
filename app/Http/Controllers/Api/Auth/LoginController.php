@@ -214,6 +214,12 @@ class LoginController extends Controller {
                 'message' => ['error' => $validator->errors()->all()],
             ]);
         }
+        
+        
+     //   $user        = $request->user();
+        
+
+     
 
         $provider    = $request->provider;
         $socialLogin = new SocialLogin($provider, true);

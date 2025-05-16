@@ -37,40 +37,35 @@
                                         <small class="text-danger mobileExist"></small>
                                     </div>
                                 </div>
-                                <div class="col-md-6">
-                                    <div class="form-group">
-                                        <label class="form-label">@lang('Address')</label>
-                                        <input type="text" class="form-control form--control" name="address" value="{{ old('address') }}">
-                                    </div>
-                                </div>
+                                
                                 <!--zz-->
-                                <div class="col-md-6">
-    <div class="form-group">
-        <label class="form-label">@lang('Nationality')</label>
-        <select class="form-control form--control" name="state">
-            <option value="">@lang('Select State')</option>
-            <option value="Kurd" {{ old('state') == 'Kurd'? 'selected' : '' }}>Kurd</option>
-            <option value="Turk" {{ old('state') == 'Turk'? 'selected' : '' }}>Turk</option>
-            <option value="Irani" {{ old('state') == 'Irani'? 'selected' : '' }}>Irani</option>
-            <option value="Arab" {{ old('state') == 'Arab'? 'selected' : '' }}>Arab</option>
-            <option value="European" {{ old('state') == 'European'? 'selected' : '' }}>European</option>
-            <option value="American" {{ old('state') == 'American'? 'selected' : '' }}>American</option>
-        </select>
-    </div>
-</div>
-                                <div class="col-md-6">
-                                    <div class="form-group">
-                                        <label class="form-label">@lang('Zip Code')</label>
-                                        <input type="text" class="form-control form--control" name="zip" value="{{ old('zip') }}">
-                                    </div>
-                                </div>
+<!--                                <div class="col-md-6">-->
+<!--    <div class="form-group">-->
+<!--        <label class="form-label">@lang('Nationality')</label>-->
+<!--        <select class="form-control form--control" name="state">-->
+<!--            <option value="">@lang('Select State')</option>-->
+<!--            <option value="Kurd" {{ old('state') == 'Kurd'? 'selected' : '' }}>Kurd</option>-->
+<!--            <option value="Turk" {{ old('state') == 'Turk'? 'selected' : '' }}>Turk</option>-->
+<!--            <option value="Irani" {{ old('state') == 'Irani'? 'selected' : '' }}>Irani</option>-->
+<!--            <option value="Arab" {{ old('state') == 'Arab'? 'selected' : '' }}>Arab</option>-->
+<!--            <option value="European" {{ old('state') == 'European'? 'selected' : '' }}>European</option>-->
+<!--            <option value="American" {{ old('state') == 'American'? 'selected' : '' }}>American</option>-->
+<!--        </select>-->
+<!--    </div>-->
+<!--</div>-->
+                                <!--<div class="col-md-6">-->
+                                <!--    <div class="form-group">-->
+                                <!--        <label class="form-label">@lang('Zip Code')</label>-->
+                                <!--        <input type="text" class="form-control form--control" name="zip" value="{{ old('zip') }}">-->
+                                <!--    </div>-->
+                                <!--</div>-->
 
-                                <div class="col-md-6">
-                                    <div class="form-group">
-                                        <label class="form-label">@lang('City')</label>
-                                        <input type="text" class="form-control form--control" name="city" value="{{ old('city') }}">
-                                    </div>
-                                </div>
+                                <!--<div class="col-md-6">-->
+                                <!--    <div class="form-group">-->
+                                <!--        <label class="form-label">@lang('City')</label>-->
+                                <!--        <input type="text" class="form-control form--control" name="city" value="{{ old('city') }}">-->
+                                <!--    </div>-->
+                                <!--</div>-->
                             </div>
                             <button type="submit" class="cmn-btn w-100">@lang('Submit')</button>
                         </form>

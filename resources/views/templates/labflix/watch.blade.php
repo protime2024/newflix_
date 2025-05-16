@@ -17,12 +17,13 @@ $conn = new mysqli($host, $username, $password, $database);
 
 $userId = auth()->id() ?? null;
 
-$tmp_stmt = $conn->prepare("SELECT rent_price,category_id FROM items WHERE id = ?");
+$tmp_stmt = $conn->prepare("SELECT rent_price,category_id,version FROM items WHERE id = ?");
 $tmp_stmt->bind_param("i", $itemIdPhp);
 $tmp_stmt->execute();
 $tmp_result = $tmp_stmt->get_result();
 $tmp_row = $tmp_result->fetch_assoc();
 $itemPrice = (int) $tmp_row['rent_price'];
+$version=(int) $tmp_row['version'];
 $category_id=$tmp_row['category_id'];
 if ($category_id==5){$itemTypePhp='free';}
 
@@ -34,7 +35,7 @@ if (is_null($userId)) {
     exit; 
 }
 
-if ($itemTypePhp == 'paid' || $itemTypePhp == 'episode') {
+if ($itemTypePhp == 'paid' || ($itemTypePhp == 'episode' && $version > 0)) {
     $stmt = $conn->prepare("SELECT expired_date 
                             FROM subscriptions 
                             WHERE user_id = ? AND expired_date > CURRENT_TIMESTAMP;");

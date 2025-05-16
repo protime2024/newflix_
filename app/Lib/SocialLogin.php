@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Models\UserDevice;
 use App\Models\UserLogin;
 use Exception;
+use Illuminate\Support\Facades\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Hash;
@@ -39,7 +40,7 @@ class SocialLogin {
         ]);
     }
 
-    public function login() {
+      public function login() {
         $provider = $this->provider;
         $provider = $this->fromApi && $provider == 'linkedin' ? 'linkedin-openid' : $provider;
         $driver   = Socialite::driver($provider);
@@ -70,7 +71,39 @@ class SocialLogin {
 
             $userData = $this->createUser($user, $this->provider);
         }
-        if ($this->fromApi) {
+        
+        // if ($this->fromApi) {
+        //     $tokenResult = $userData->createToken('auth_token')->plainTextToken;
+        //     $this->loginLog($userData);
+        //     return [
+        //         'user'         => $userData,
+        //         'access_token' => $tokenResult,
+        //         'token_type'   => 'Bearer',
+        //     ];
+        // }
+
+        // Check device limit
+        if (gs('device_limit') && $userData->plan) {
+            $userDevices = UserDevice::where('user_id', $userData->id)->distinct()->pluck('device_id')->toArray();
+            
+            // Get device ID from request or user agent
+            $currentDeviceId = md5(Request::header('User-Agent'));
+            
+            if (count($userDevices) >= $userData->plan->device_limit && !in_array($currentDeviceId, $userDevices)) {
+                Auth::logout();
+                throw new Exception('Device limit reached. You can only use ' . $userData->plan->device_limit . ' device(s).');
+            }
+            
+            // Save device info if it doesn't exist
+            $existDevice = UserDevice::where('user_id', $userData->id)->where('device_id', $currentDeviceId)->exists();
+            if (!$existDevice) {
+                $device = new UserDevice();
+                $device->user_id = $userData->id;
+                $device->device_id = $currentDeviceId;
+                $device->save();
+            }
+        }
+         if ($this->fromApi) {
             $tokenResult = $userData->createToken('auth_token')->plainTextToken;
             $this->loginLog($userData);
             return [
@@ -78,25 +111,6 @@ class SocialLogin {
                 'access_token' => $tokenResult,
                 'token_type'   => 'Bearer',
             ];
-        }
-
-        $general = gs();
-        if ($general->device_limit && $userData->plan) {
-            $userDevices     = UserDevice::where('user_id', $userData->id)->distinct()->pluck('device_id')->toArray();
-            $currentDeviceId = md5($_SERVER['HTTP_USER_AGENT']);
-            if (count($userDevices) == @$user->plan->device_limit && !in_array($currentDeviceId, $userDevices)) {
-                session()->flush();
-                Auth::logout();
-                $notify[] = ['error', 'Device limit is over'];
-                return to_route('user.login')->withNotify($notify);
-            }
-            $existDevice = UserDevice::where('user_id', $user->id)->where('device_id', $currentDeviceId)->exists();
-            if (!$existDevice) {
-                $device            = new UserDevice();
-                $device->user_id   = $user->id;
-                $device->device_id = $currentDeviceId;
-                $device->save();
-            }
         }
 
         Auth::login($userData);

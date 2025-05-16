@@ -16,6 +16,8 @@ use Illuminate\Support\Facades\Route;
 
 
 Route::namespace('Api')->name('api.')->group(function () {
+    Route::get('tv-cat', 'UserController@listCategoryNames');
+
 
     Route::controller('AppController')->group(function () {
         Route::get('general-setting', 'generalSetting');
@@ -103,8 +105,9 @@ Route::namespace('Api')->name('api.')->group(function () {
 
                     Route::post('delete-account', 'deleteAccount');
 
-                    Route::get('user/live-television/{scope?}', 'liveTelevision');
-                    Route::get('live-tv/{id?}', 'watchTelevision');
+                    Route::get('live-tv/{id?}', 'UserController@watchTelevision');
+Route::get('live-television/{scope?}', 'UserController@liveTelevision');
+
                     Route::post('subscribe/channel/{id}', 'subscribeChannel');
                     Route::get('user/short/videos/{id?}/{route?}', 'shortVideos');
 

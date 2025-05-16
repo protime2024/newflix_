@@ -16,21 +16,22 @@ class RegistrationStep {
      */
     public function handle(Request $request, Closure $next) {
         $user = auth()->user();
-        if (!$user->profile_complete) {
-            if ($request->is('api/*')) {
-                $notify[] = 'Please complete your profile to go next';
-                return response()->json([
-                    'remark'  => 'profile_incomplete',
-                    'status'  => 'error',
-                    'message' => ['error' => $notify],
-                    'data'    => [
-                        'user' => $user,
-                    ],
-                ]);
-            } else {
-                return to_route('user.data');
-            }
-        }
+        // if (!$user->profile_complete) {
+        //     if ($request->is('api/*')) {
+        //         // $notify[] = 'Please complete your profile to go next';
+        //         // return response()->json([
+        //         //     'remark'  => 'profile_incomplete',
+        //         //     'status'  => 'error',
+        //         //     'message' => ['error' => $notify],
+        //         //     'data'    => [
+        //         //         'user' => $user,
+        //         //     ],
+        //         // ]);
+        //         return to_route('user.data');
+        //     } else {
+        //         return to_route('user.data');
+        //     }
+        // }
 
         if (!session('app_payment')) {
             $general = gs();

@@ -1,7 +1,6 @@
 <?php
 
 namespace App\Http\Controllers\Api;
-
 use App\Constants\Status;
 use App\Http\Controllers\Controller;
 use App\Lib\FormProcessor;
@@ -866,6 +865,7 @@ class UserController extends Controller {
     }
 
     public function watchVideo(Request $request) {
+        
         $item = Item::hasVideo()->where('status', 1)->where('id', $request->item_id)->with('category', 'sub_category')->first();
 
         if (!$item) {
@@ -947,52 +947,172 @@ class UserController extends Controller {
         ]);
 
     }
+    
+    
+    // protected function checkWatchEligableItem($item, $userHasSubscribed) {
+    // // If the item is an episode, only allow watching for subscribed users
+    // if ($item->item_type == Status::EPISODE_ITEM) {
+    //     $watchEligable = $userHasSubscribed ? true : false;
+    //     $type = 'series';
+    //     return [$watchEligable, $type];
+    // }
 
-    protected function checkWatchEligableItem($item, $userHasSubscribed) {
-        if ($item->version == Status::PAID_VERSION) {
-            $watchEligable = $userHasSubscribed ? true : false;
-            $type          = 'paid';
-        } else if ($item->version == Status::RENT_VERSION) {
-            
-            
-               $watchEligable = $userHasSubscribed ? true : false;
-                $type = 'rent';
-                
-                
-                //NOTE --->>>> to make rental feature work delete the above two lines and uncomment the below code
-            
-            // $hasSubscribedItem = Subscription::active()->where('user_id', auth()->id())->where('item_id', $item->id)->whereDate('expired_date', '>', now())->exists();
-            // if ($item->exclude_plan) {
-            //     $watchEligable = $hasSubscribedItem ? true : false;
-            // } else {
-            //     $watchEligable = ($userHasSubscribed || $hasSubscribedItem) ? true : false;
-            // }
-            // $type = 'rent';
-        } else {
-            $watchEligable = true;
-            $type          = 'free';
-        }
-        return [$watchEligable, $type];
+    // if ($item->version == Status::PAID_VERSION) {
+    //     // Check if user has purchased this specific item
+    //     $hasPurchasedItem = \DB::table('trial')
+    //         ->where('user_id', auth()->id())
+    //         ->where('item_id', $item->id)
+    //         ->where('created_on', '>=', now()->subDays(7))
+    //         ->exists();
+        
+    //     $watchEligable = ($userHasSubscribed || $hasPurchasedItem) ? true : false;
+    //     $type = 'paid';
+    // } else if ($item->version == Status::RENT_VERSION) {
+    //     // Only allow renting for movies (non-episode items)
+    //     $hasSubscribedItem = Subscription::active()
+    //         ->where('user_id', auth()->id())
+    //         ->where('item_id', $item->id)
+    //         ->whereDate('expired_date', '>', now())
+    //         ->exists();
+        
+    //     // Check if user has a trial for this item within the last 7 days
+    //     $hasTrial = \DB::table('trial')
+    //         ->where('user_id', auth()->id())
+    //         ->where('item_id', $item->id)
+    //         ->where('created_on', '>=', now()->subDays(7))
+    //         ->exists();
+        
+    //     if ($item->exclude_plan) {
+    //         $watchEligable = ($userHasSubscribed || $hasSubscribedItem || $hasTrial) ? true : false;
+    //     } else {
+    //         $watchEligable = ($userHasSubscribed || $hasSubscribedItem || $hasTrial) ? true : false;
+    //     }
+    //     $type = 'rent';
+    // } else {
+    //     $watchEligable = true;
+    //     $type = 'free';
+    // }
+    // return [$watchEligable, $type];
+//}
+
+// commented on 12 may t disable rent for episodes...
+protected function checkWatchEligableItem($item, $userHasSubscribed) {
+     if ($item->version == Status::PAID_VERSION) {
+        // Check if user has purchased this specific item
+        $hasPurchasedItem = \DB::table('trial')
+            ->where('user_id', auth()->id())
+            ->where('item_id', $item->id)
+            ->where('created_on', '>=', now()->subDays(1000))
+            ->exists();
+        
+        $watchEligable = ($userHasSubscribed || $hasPurchasedItem) ? true : false;
+        $type = 'paid';
+    }  else if ($item->version == Status::RENT_VERSION) {
+        $hasSubscribedItem = Subscription::active()->where('user_id', auth()->id())->where('item_id', $item->id)->whereDate('expired_date', '>', now())->exists();
+        
+        // Check if user has a trial for this item within the last 7 days
+        $hasTrial = \DB::table('trial')
+            ->where('user_id', auth()->id())
+            ->where('item_id', $item->id)
+            ->where('created_on', '>=', now()->subDays(1))
+            ->exists();
+        
+        $watchEligable = ($userHasSubscribed && $hasSubscribedItem || $hasTrial);
+
+        $type = 'rent';
+    } else {
+        $watchEligable = true;
+        $type = 'free';
     }
+    return [$watchEligable, $type];
+}
 
-    protected function checkWatchEligableEpisode($episode, $userHasSubscribed) {
+//uncoment below to disable rent feature
+
+    // protected function checkWatchEligableItem($item, $userHasSubscribed) {
+    //     if ($item->version == Status::PAID_VERSION) {
+    //         $watchEligable = $userHasSubscribed ? true : false;
+    //         $type          = 'paid';
+    //     } else if ($item->version == Status::RENT_VERSION) {
+            
+            
+    //           $watchEligable = $userHasSubscribed ? true : false;
+    //             $type = 'rent';
+                
+                
+    //             //NOTE --->>>> to make rental feature work delete the above two lines and uncomment the below code
+            
+    //         // $hasSubscribedItem = Subscription::active()->where('user_id', auth()->id())->where('item_id', $item->id)->whereDate('expired_date', '>', now())->exists();
+    //         // if ($item->exclude_plan) {
+    //         //     $watchEligable = $hasSubscribedItem ? true : false;
+    //         // } else {
+    //         //     $watchEligable = ($userHasSubscribed || $hasSubscribedItem) ? true : false;
+    //         // }
+    //         // $type = 'rent';
+    //     } else {
+    //         $watchEligable = true;
+    //         $type          = 'free';
+    //     }
+    //     return [$watchEligable, $type];
+    // }
+
+
+protected function checkWatchEligableEpisode($episode, $userHasSubscribed) {
+    // Always allow watching for subscribed users
+    if (!$userHasSubscribed) {
+        // If not subscribed, check specific episode/series access conditions
         if ($episode->version == Status::PAID_VERSION) {
-            $watchEligable = $userHasSubscribed ? true : false;
-            $type          = 'paid';
+            // For paid episodes, subscription is required
+            $watchEligable = false;
+            $type = 'paid';
         } else if ($episode->version == Status::RENT_VERSION) {
-            $hasSubscribedItem = Subscription::active()->where('user_id', auth()->id())->where('item_id', $episode->item_id)->whereDate('expired_date', '>', now())->exists();
-            if (@$episode->item->exclude_plan) {
-                $watchEligable = $hasSubscribedItem ? true : false;
-            } else {
-                $watchEligable = ($userHasSubscribed || $hasSubscribedItem) ? true : false;
-            }
+            // Disable rent for episodes
+            $watchEligable = true;
             $type = 'rent';
         } else {
+            // Free episodes can be watched
             $watchEligable = true;
-            $type          = 'free';
+            $type = 'free';
         }
-        return [$watchEligable, $type];
+    } else {
+        // Subscribed users can watch all episodes
+        $watchEligable = true;
+        $type = 'subscribed';
     }
+
+    return [$watchEligable, $type];
+}
+//     protected function checkWatchEligableEpisode($episode, $userHasSubscribed) {
+//     if ($episode->version == Status::PAID_VERSION) {
+        
+//         $watchEligable = $userHasSubscribed ? true : false;
+//         $type = 'paid';
+//     } else if ($episode->version == Status::RENT_VERSION) {
+//         $hasSubscribedItem = Subscription::active()
+//             ->where('user_id', auth()->id())
+//             ->where('item_id', $episode->item_id)
+//             ->whereDate('expired_date', '>', now())
+//             ->exists();
+            
+//         // Check if user has a trial for this item within the last 7 days
+//         $hasTrial = \DB::table('trial')
+//             ->where('user_id', auth()->id())
+//             ->where('item_id', $episode->item_id)
+//             ->where('created_on', '>=', now()->subDays(7))
+//             ->exists();
+            
+//         if (@$episode->item->exclude_plan) {
+//             $watchEligable = ($userHasSubscribed || $hasSubscribedItem || $hasTrial) ? true : false;
+//         } else {
+//             $watchEligable = ($userHasSubscribed || $hasSubscribedItem || $hasTrial) ? true : false;
+//         }
+//         $type = 'rent';
+//     } else {
+//         $watchEligable = true;
+//         $type = 'free';
+//     }
+//     return [$watchEligable, $type];
+// }
 
     public function playVideo(Request $request) {
         $validator = Validator::make($request->all(), [
@@ -1328,15 +1448,17 @@ class UserController extends Controller {
     }
 
     public function userInfo() {
-        $notify[] = 'User information';
+         $notify[] = 'User information';
+        $user = auth()->user()->makeVisible('exp'); // Make exp visible explicitly
         return response()->json([
             'remark'  => 'user_info',
             'status'  => 'success',
             'message' => ['success' => $notify],
             'data'    => [
-                'user' => auth()->user(),
+                'user' => $user,
             ],
         ]);
+    
     }
 
     public function deleteAccount() {
@@ -1372,6 +1494,16 @@ class UserController extends Controller {
             ],
         ]);
     }
+    
+    public function listCategoryNames()
+{
+    $categories = ChannelCategory::select('name')->get();
+    
+    return response()->json([
+        'success' => true,
+        'categories' => $categories->pluck('name')
+    ]);
+}
 
     public function watchTelevision($id = 0) {
         $tv = LiveTelevision::with('category')->active()->where('id', $id)->first();
@@ -1383,7 +1515,7 @@ class UserController extends Controller {
             ]);
         }
 
-        $user = auth()->user();
+        $user = null;
 
         // $hasSubscribed = Subscription::where('user_id', $user->id)->where('channel_category_id', $tv->channel_category_id)->where('expired_date', '>=', now())->active()->first();
         // if (!$hasSubscribed) {
@@ -1399,7 +1531,7 @@ class UserController extends Controller {
             $query->active();
         })->active()->where('id', '!=', $id)->get();
 
-        $subscribedChannelId = $user->subscribedChannelId();
+       // $subscribedChannelId = $user->subscribedChannelId();
         $imagePath           = getFilePath('television');
 
         return response()->json([
@@ -1410,7 +1542,6 @@ class UserController extends Controller {
                 'tv'                  => $tv,
                 'related_tv'          => $relatedTv,
                 'image_path'          => $imagePath,
-                'subscribedChannelId' => $subscribedChannelId,
             ],
         ]);
     }
@@ -1610,27 +1741,27 @@ class UserController extends Controller {
     }
 
     public function liveTelevision($scope = null) {
-        $notify[] = 'Live Television';
-        if ($scope == 'show_all') {
-            $televisions = ChannelCategory::active()->withWhereHas('channels', function ($query) {
-                $query->active();
-            })->apiQuery();
-        } else {
-            $televisions = LiveTelevision::active()->apiQuery();
-        }
-        $imagePath = getFilePath('television');
+        // $notify[] = 'Live Television';
+        // // if ($scope == 'show_all') {
+        // //     $televisions = ChannelCategoryx::active()->withWhereHas('channels', function ($query) {
+        // //         $query->active();
+        // //     })->apiQuery();
+        // // } else {
+        // //     $televisions = LiveTelevision::with('category')->active()->apiQuery();
+        // // }
+        // $imagePath = getFilePath('television');
 
-        $subscribedChannelId = auth()->user()->subscribedChannelId();
+        // $subscribedChannelId = auth()->user()->subscribedChannelId();
 
-        return response()->json([
-            'remark'  => 'live_television',
-            'status'  => 'success',
-            'message' => ['success' => $notify],
-            'data'    => [
-                'televisions'         => $televisions,
-                'image_path'          => $imagePath,
-                'subscribedChannelId' => $subscribedChannelId,
-            ],
-        ]);
+        // return response()->json([
+        //     'remark'  => 'live_television',
+        //     'status'  => 'success',
+        //     'message' => ['success' => $notify],
+        //     'data'    => [
+        //         'televisions'         => $televisions,
+        //         'image_path'          => $imagePath,
+        //         'subscribedChannelId' => $subscribedChannelId,
+        //     ],
+        // ]);
     }
 }

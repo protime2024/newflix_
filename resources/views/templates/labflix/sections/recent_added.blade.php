@@ -7,26 +7,66 @@
                 </div>
             </div>
         </div><!-- row end -->
-        <div class="row mb-none-30">
+        <div class="movie-slider-one">
             @foreach ($recent_added as $recent)
-                <div class="col-xxl-2 col-md-3 col-4 col-xs-6 mb-30">
-                    <div class="movie-card" data-text="{{ $recent->versionName }}">
-                        <div class="movie-card__thumb thumb__2">
-                            <img class="lazy-loading-img" data-src="{{ getImage(getFilePath('item_portrait') . '/' . $recent->image->portrait) }}" src="{{ asset('assets/global/images/lazy.png') }}" alt="@lang('image')">
-                            <a class="icon" href="{{ route('watch', $recent->slug) }}"><i class="fas fa-play"></i></a>
-                        </div>
-                    </div><!-- movie-card end -->
+                <div class="movie-card" data-text="{{ $recent->versionName }}">
+                    <div class="movie-card__thumb">
+                        <img class="lazy-loading-img" data-src="{{ getImage(getFilePath('item_portrait') . '/' . $recent->image->portrait) }}" src="{{ asset('assets/global/images/lazy.png') }}" alt="@lang('image')">
+                        <a class="icon" href="{{ route('watch', $recent->slug) }}"><i class="fas fa-play"></i></a>
+                    </div>
+                    <div class="movie-card__content">
+                        <h6><a href="{{ route('watch', $recent->slug) }}">{{ __(isset($recent->title) ? short_string($recent->title, 17) : '') }}</a></h6>
+                        <ul class="movie-card__meta">
+                            <li><i class="far fa-eye color--primary"></i> <span>{{ isset($recent->view) ? numFormat($recent->view) : '0' }}</span></li>
+                            <li><i class="fas fa-star color--glod"></i> <span>({{ isset($recent->ratings) ? $recent->ratings : '0' }})</span></li>
+                        </ul>
+                    </div>
                 </div>
             @endforeach
         </div>
     </div>
 </section>
-<div class="ad-section pb-80">
-    <div class="container">
-        <div class="row justify-content-center">
-            <div class="col-lg-8">
-                @php echo showAd() @endphp
-            </div>
-        </div>
-    </div>
-</div>
+
+<script>
+    $(document).ready(function() {
+        // Initialize the movie slider for the Latest Items section
+        if ($('.section[data-section="top"] .movie-slider-one').length && !$('.section[data-section="top"] .movie-slider-one').hasClass('slick-initialized')) {
+            $('.section[data-section="top"] .movie-slider-one').slick({
+                infinite: true,
+                slidesToShow: 6,
+                slidesToScroll: 1,
+                arrows: true,
+                dots: false,
+                autoplay: false,
+                prevArrow: '<div class="prev slick-arrow"><i class="las la-long-arrow-alt-left"></i></div>',
+                nextArrow: '<div class="next slick-arrow"><i class="las la-long-arrow-alt-right"></i></div>',
+                responsive: [
+                    {
+                        breakpoint: 1200,
+                        settings: {
+                            slidesToShow: 5
+                        }
+                    },
+                    {
+                        breakpoint: 992,
+                        settings: {
+                            slidesToShow: 4
+                        }
+                    },
+                    {
+                        breakpoint: 768,
+                        settings: {
+                            slidesToShow: 3
+                        }
+                    },
+                    {
+                        breakpoint: 576,
+                        settings: {
+                            slidesToShow: 2
+                        }
+                    }
+                ]
+            });
+        }
+    });
+</script>

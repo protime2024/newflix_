@@ -79,8 +79,7 @@ class RegisterController extends Controller {
 
         $this->guard()->login($user);
 
-        return $this->registered($request, $user)
-        ?: redirect($this->redirectPath());
+        return redirect('/');
     }
 
     protected function create(array $data) {
@@ -91,7 +90,7 @@ class RegisterController extends Controller {
             $referUser = null;
         }
 
-        //User Create
+        // User Create
         $user            = new User();
         $user->email     = strtolower($data['email']);
         $user->firstname = $data['firstname'];

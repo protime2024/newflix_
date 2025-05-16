@@ -20,13 +20,35 @@
                             <form class="account-from verify-gcaptcha" action="{{ route('user.login') }}" method="post">
                                 @csrf
                                 <div class="form-group">
-                                    <label>@lang('Username')</label>
-                                    <input class="form-control" name="username" type="text" value="{{ old('username') }}" placeholder="@lang('Username')">
+                                    <label>@lang('Username Or Email')</label>
+                                    <input class="form-control" name="username" type="text" value="{{ old('username') }}" placeholder="@lang('Username or Email')">
                                 </div>
-                                <div class="form-group">
-                                    <label>@lang('Password')</label>
-                                    <input class="form-control" name="password" type="password" placeholder="@lang('Password')">
-                                </div>
+                             <div class="form-group">
+    <label>@lang('Password')</label>
+    <div class="password-container" style="position: relative;">
+        <input class="form-control" name="password" type="password" placeholder="@lang('Password')">
+        <span onclick="togglePassword()" class="password-toggle" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); cursor: pointer;">
+            <i id="toggleIcon" class="fa fa-eye"></i>
+        </span>
+    </div>
+</div>
+
+<script>
+function togglePassword() {
+    const passwordInput = document.querySelector('input[name="password"]');
+    const toggleIcon = document.getElementById('toggleIcon');
+    
+    if (passwordInput.type === "password") {
+        passwordInput.type = "text";
+        toggleIcon.classList.remove("fa-eye");
+        toggleIcon.classList.add("fa-eye-slash");
+    } else {
+        passwordInput.type = "password";
+        toggleIcon.classList.remove("fa-eye-slash");
+        toggleIcon.classList.add("fa-eye");
+    }
+}
+</script>
                                 <x-captcha />
                                 <div class="text-center">
                                     <button class="cmn-btn w-100" type="submit">@lang('Login')</button>
