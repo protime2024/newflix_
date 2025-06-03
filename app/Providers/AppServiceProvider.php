@@ -27,8 +27,6 @@ class AppServiceProvider extends ServiceProvider {
      * Bootstrap any application services.
      */
     public function boot(): void {
-       
-        cache()->put('SystemInstalled', true);
         
 
         $viewShare['emptyMessage'] = 'Data not found';
